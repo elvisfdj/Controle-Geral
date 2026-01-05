@@ -10,6 +10,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
+    
+    <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAajyRVH8eR7gWDAF-cE7Y32sKCyH3my8I",
+    authDomain: "controle-numeros.firebaseapp.com",
+    projectId: "controle-numeros",
+    storageBucket: "controle-numeros.firebasestorage.app",
+    messagingSenderId: "95868423352",
+    appId: "1:95868423352:web:7968f64d68fc18eb8cb84d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  window.db = getFirestore(app);
+</script>
+
     <div id="root"></div>
 
     <script type="text/babel">
