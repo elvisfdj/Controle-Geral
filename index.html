@@ -1,234 +1,196 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Numeração - Compartilhado</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Numeração - Compartilhado</title>
 
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
 const { useState, useEffect } = React;
 
-/* 🔗 BACKEND */
+/* 🔗 BACKEND (Apps Script) */
 const API_URL = 'https://script.google.com/macros/s/AKfycbzjWQzqt5mR4lABleETEybE8gsnh6HYkTPrlcyrMG2KZGZPBgnST4v8ZiwPOgSk6tvsnA/exec';
 
 function ControleNumeracao() {
-    const [documentos, setDocumentos] = useState([]);
-    const [filtroTipo, setFiltroTipo] = useState('TODOS');
-    const [filtroSetor, setFiltroSetor] = useState('');
-    const [carregando, setCarregando] = useState(true);
-    const [salvando, setSalvando] = useState(false);
-    const anoAtual = new Date().getFullYear();
+  const [documentos, setDocumentos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const anoAtual = new Date().getFullYear();
 
-    const [novoDoc, setNovoDoc] = useState({
+  const [novoDoc, setNovoDoc] = useState({
+    tipo: 'EDITAL',
+    data: new Date().toISOString().split('T')[0],
+    setorOrigem: '',
+    setorDestino: '',
+    observacao: ''
+  });
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  /* GET */
+  async function carregarDados() {
+    setCarregando(true);
+    try {
+      const res = await fetch(API_URL);
+      const json = await res.json();
+      if (json.sucesso) setDocumentos(json.dados || []);
+    } catch (e) {
+      alert('Erro ao carregar dados');
+      console.error(e);
+    }
+    setCarregando(false);
+  }
+
+  /* POST – SEM HEADERS (evita preflight) */
+  async function adicionarDocumento() {
+    if (!novoDoc.setorOrigem.trim()) {
+      alert('Setor de origem obrigatório');
+      return;
+    }
+
+    setSalvando(true);
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(novoDoc)
+      });
+
+      const json = await res.json();
+      if (!json.sucesso) throw new Error(json.erro);
+
+      alert(`Documento ${json.numero} registrado`);
+      setNovoDoc({
         tipo: 'EDITAL',
         data: new Date().toISOString().split('T')[0],
         setorOrigem: '',
         setorDestino: '',
         observacao: ''
-    });
+      });
 
-    useEffect(() => {
-        carregarDados();
-    }, []);
-
-    /* 📥 CARREGAR */
-    const carregarDados = async () => {
-        setCarregando(true);
-        try {
-            const res = await fetch(API_URL);
-            const json = await res.json();
-            if (json.sucesso) {
-                setDocumentos(json.dados || []);
-            }
-        } catch (e) {
-            alert('Erro ao carregar dados');
-            console.error(e);
-        }
-        setCarregando(false);
-    };
-
-    /* ➕ SALVAR */
-    const adicionarDocumento = async () => {
-        if (!novoDoc.setorOrigem.trim()) {
-            alert('Setor de origem é obrigatório');
-            return;
-        }
-
-        setSalvando(true);
-        try {
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(novoDoc)
-            });
-
-            const json = await res.json();
-            if (!json.sucesso) throw new Error(json.erro);
-
-            await carregarDados();
-
-            setNovoDoc({
-                tipo: 'EDITAL',
-                data: new Date().toISOString().split('T')[0],
-                setorOrigem: '',
-                setorDestino: '',
-                observacao: ''
-            });
-
-            alert(`Documento ${json.numero} registrado com sucesso`);
-        } catch (e) {
-            alert('Erro ao salvar documento');
-            console.error(e);
-        }
-        setSalvando(false);
-    };
-
-    const documentosFiltrados = documentos.filter(d => {
-        const tipoOk = filtroTipo === 'TODOS' || d.tipo === filtroTipo;
-        const setorOk =
-            !filtroSetor ||
-            d.setor_origem.toLowerCase().includes(filtroSetor.toLowerCase()) ||
-            d.setor_destino.toLowerCase().includes(filtroSetor.toLowerCase());
-        return tipoOk && setorOk;
-    });
-
-    if (carregando) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <p className="text-xl">Carregando dados...</p>
-            </div>
-        );
+      await carregarDados();
+    } catch (e) {
+      alert('Erro ao salvar documento');
+      console.error(e);
     }
+    setSalvando(false);
+  }
 
+  if (carregando) {
     return (
-        <div className="min-h-screen bg-gray-100 p-4">
-            <div className="max-w-7xl mx-auto bg-white p-6 rounded-xl shadow">
-
-                <h1 className="text-3xl font-bold mb-4">
-                    Controle de Numeração – {anoAtual}
-                </h1>
-
-                {/* FORMULÁRIO */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <select
-                        value={novoDoc.tipo}
-                        onChange={e => setNovoDoc({ ...novoDoc, tipo: e.target.value })}
-                        className="border p-2 rounded"
-                    >
-                        <option value="EDITAL">EDITAL</option>
-                        <option value="OFICIO">OFÍCIO</option>
-                        <option value="MEMORANDO">MEMORANDO</option>
-                    </select>
-
-                    <input
-                        type="date"
-                        value={novoDoc.data}
-                        onChange={e => setNovoDoc({ ...novoDoc, data: e.target.value })}
-                        className="border p-2 rounded"
-                    />
-
-                    <input
-                        type="text"
-                        placeholder="Setor de Origem *"
-                        value={novoDoc.setorOrigem}
-                        onChange={e => setNovoDoc({ ...novoDoc, setorOrigem: e.target.value })}
-                        className="border p-2 rounded"
-                    />
-
-                    <input
-                        type="text"
-                        placeholder="Setor de Destino"
-                        value={novoDoc.setorDestino}
-                        onChange={e => setNovoDoc({ ...novoDoc, setorDestino: e.target.value })}
-                        className="border p-2 rounded"
-                    />
-
-                    <input
-                        type="text"
-                        placeholder="Observação"
-                        value={novoDoc.observacao}
-                        onChange={e => setNovoDoc({ ...novoDoc, observacao: e.target.value })}
-                        className="border p-2 rounded md:col-span-2"
-                    />
-                </div>
-
-                <button
-                    onClick={adicionarDocumento}
-                    disabled={salvando}
-                    className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
-                >
-                    {salvando ? 'Salvando...' : 'Adicionar Documento'}
-                </button>
-
-                {/* FILTROS */}
-                <div className="flex gap-4 mt-8">
-                    <select
-                        value={filtroTipo}
-                        onChange={e => setFiltroTipo(e.target.value)}
-                        className="border p-2 rounded"
-                    >
-                        <option value="TODOS">Todos</option>
-                        <option value="EDITAL">EDITAL</option>
-                        <option value="OFICIO">OFÍCIO</option>
-                        <option value="MEMORANDO">MEMORANDO</option>
-                    </select>
-
-                    <input
-                        type="text"
-                        placeholder="Filtrar por setor"
-                        value={filtroSetor}
-                        onChange={e => setFiltroSetor(e.target.value)}
-                        className="border p-2 rounded"
-                    />
-                </div>
-
-                {/* TABELA */}
-                <div className="overflow-x-auto mt-6">
-                    <table className="w-full border">
-                        <thead className="bg-indigo-600 text-white">
-                            <tr>
-                                <th className="p-2">Tipo</th>
-                                <th className="p-2">Número</th>
-                                <th className="p-2">Data</th>
-                                <th className="p-2">Origem</th>
-                                <th className="p-2">Destino</th>
-                                <th className="p-2">Observação</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {documentosFiltrados.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" className="text-center p-4">
-                                        Nenhum registro
-                                    </td>
-                                </tr>
-                            ) : (
-                                documentosFiltrados.slice().reverse().map(doc => (
-                                    <tr key={doc.id} className="border-t">
-                                        <td className="p-2">{doc.tipo}</td>
-                                        <td className="p-2 font-mono">{doc.numero}</td>
-                                        <td className="p-2">{new Date(doc.data).toLocaleDateString('pt-BR')}</td>
-                                        <td className="p-2">{doc.setor_origem}</td>
-                                        <td className="p-2">{doc.setor_destino || '-'}</td>
-                                        <td className="p-2">{doc.observacao || '-'}</td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-            </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Carregando...</p>
+      </div>
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-4">
+      <div className="max-w-6xl mx-auto bg-white p-6 rounded shadow">
+
+        <h1 className="text-3xl font-bold mb-4">
+          Controle de Numeração – {anoAtual}
+        </h1>
+
+        {/* FORMULÁRIO */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <select
+            className="border p-2 rounded"
+            value={novoDoc.tipo}
+            onChange={e => setNovoDoc({ ...novoDoc, tipo: e.target.value })}
+          >
+            <option value="EDITAL">EDITAL</option>
+            <option value="OFICIO">OFÍCIO</option>
+            <option value="MEMORANDO">MEMORANDO</option>
+          </select>
+
+          <input
+            type="date"
+            className="border p-2 rounded"
+            value={novoDoc.data}
+            onChange={e => setNovoDoc({ ...novoDoc, data: e.target.value })}
+          />
+
+          <input
+            type="text"
+            className="border p-2 rounded"
+            placeholder="Setor Origem *"
+            value={novoDoc.setorOrigem}
+            onChange={e => setNovoDoc({ ...novoDoc, setorOrigem: e.target.value })}
+          />
+
+          <input
+            type="text"
+            className="border p-2 rounded"
+            placeholder="Setor Destino"
+            value={novoDoc.setorDestino}
+            onChange={e => setNovoDoc({ ...novoDoc, setorDestino: e.target.value })}
+          />
+
+          <input
+            type="text"
+            className="border p-2 rounded md:col-span-2"
+            placeholder="Observação"
+            value={novoDoc.observacao}
+            onChange={e => setNovoDoc({ ...novoDoc, observacao: e.target.value })}
+          />
+        </div>
+
+        <button
+          onClick={adicionarDocumento}
+          disabled={salvando}
+          className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700"
+        >
+          {salvando ? 'Salvando...' : 'Adicionar Documento'}
+        </button>
+
+        {/* TABELA */}
+        <div className="overflow-x-auto mt-6">
+          <table className="w-full border">
+            <thead className="bg-indigo-600 text-white">
+              <tr>
+                <th className="p-2">Tipo</th>
+                <th className="p-2">Número</th>
+                <th className="p-2">Data</th>
+                <th className="p-2">Origem</th>
+                <th className="p-2">Destino</th>
+                <th className="p-2">Obs.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {documentos.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center p-4">Nenhum registro</td>
+                </tr>
+              ) : (
+                documentos.slice().reverse().map(doc => (
+                  <tr key={doc.id} className="border-t">
+                    <td className="p-2">{doc.tipo}</td>
+                    <td className="p-2 font-mono">{doc.numero}</td>
+                    <td className="p-2">{new Date(doc.data).toLocaleDateString('pt-BR')}</td>
+                    <td className="p-2">{doc.setor_origem}</td>
+                    <td className="p-2">{doc.setor_destino || '-'}</td>
+                    <td className="p-2">{doc.observacao || '-'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  );
 }
 
 ReactDOM.render(<ControleNumeracao />, document.getElementById('root'));
