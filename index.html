@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+        
 <html lang="pt-BR">
 
 <head>
@@ -529,6 +530,7 @@
             const [periodoInicio, setPeriodoInicio] = useState(0);
             const [periodoFim, setPeriodoFim] = useState(11);
             const [marcadores, setMarcadores] = useState({});
+            const [menuCorAberto, setMenuCorAberto] = useState(null);
 
             const valorUficaAtual = valorUfica[ano] || VALOR_UFICA_2026;
 
@@ -1140,25 +1142,36 @@
                                                             {consultando ? <span className="text-blue-600">🔄</span> : l.verificado ? <span className="text-green-600">✅</span> : isDuplicado ? <span className="text-orange-600">⚠️</span> : <span className="text-gray-400">⏳</span>}
                                                         </td>
                                                         <td className="px-3 py-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-lg">✏️</span>
-                                                                <select
-                                                                    value={marcadores[l.id] || ''}
-                                                                    onChange={(e) => toggleMarcador(l.id, e.target.value || null)}
-                                                                    className="px-2 py-1 border rounded text-xs bg-white"
-                                                                    style={{
-                                                                        backgroundColor: marcadores[l.id] ? marcadores[l.id] : 'white',
-                                                                        color: marcadores[l.id] ? 'white' : 'black'
-                                                                    }}
-                                                                >
-                                                                    <option value="">Sem cor</option>
-                                                                    <option value="red" style={{ backgroundColor: 'red', color: 'white' }}>🔴 Vermelho</option>
-                                                                    <option value="yellow" style={{ backgroundColor: 'yellow', color: 'black' }}>🟡 Amarelo</option>
-                                                                    <option value="green" style={{ backgroundColor: 'green', color: 'white' }}>🟢 Verde</option>
-                                                                    <option value="blue" style={{ backgroundColor: 'blue', color: 'white' }}>🔵 Azul</option>
-                                                                    <option value="purple" style={{ backgroundColor: 'purple', color: 'white' }}>🟣 Roxo</option>                                                                  
-                                                                    <option value="orange" style={{ backgroundColor: 'orange', color: 'white' }}>🟠 Laranja</option>
-                                                                </select>
+                                                            <div className="relative">
+                                                                <button
+                                                                    onClick={() => setMenuCorAberto(menuCorAberto === l.id ? null : l.id)}
+                                                                    className="w-6 h-6 rounded-full border-2 border-gray-300 hover:border-gray-400"
+                                                                    style={{ backgroundColor: marcadores[l.id] || '#e5e7eb' }}
+                                                                />
+                                                                {menuCorAberto === l.id && (
+                                                                    <div className="absolute z-10 mt-1 bg-white border rounded shadow-lg p-2 flex gap-1">
+                                                                        {['red', 'yellow', 'green', 'blue', 'purple', 'orange'].map(cor => (
+                                                                            <button
+                                                                                key={cor}
+                                                                                onClick={() => {
+                                                                                    toggleMarcador(l.id, marcadores[l.id] === cor ? null : cor);
+                                                                                    setMenuCorAberto(null);
+                                                                                }}
+                                                                                className="w-6 h-6 rounded-full border-2 border-gray-300 hover:border-gray-800"
+                                                                                style={{ backgroundColor: cor }}
+                                                                            />
+                                                                        ))}
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                toggleMarcador(l.id, null);
+                                                                                setMenuCorAberto(null);
+                                                                            }}
+                                                                            className="w-6 h-6 rounded-full border-2 border-gray-300 hover:border-gray-800 bg-white text-xs"
+                                                                        >
+                                                                            ✕
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         </td>
                                                         <td className="px-3 py-2">{l.inscricaoMunicipal}</td>
@@ -1253,10 +1266,4 @@
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
-
 </html>
-
-
-
-
-
