@@ -840,7 +840,7 @@
             };
 
             const exportCSV = () => {
-                const header = ['Inscrição', 'Documento', 'Nome', 'Porte', 'Tributação', 'N° OS', 'Auditor', 'TFLF (R$)', 'ISSQN (R$)', 'VISA (R$)', 'Verificado', 'Taxas Lançadas'];
+                const header = ['Inscrição', 'Documento', 'Identificação do Contribuinte', 'Porte', 'Tributação', 'N° OS', 'Auditor', 'TFLF (R$)', 'ISSQN (R$)', 'VISA (R$)', 'Verificado', 'Taxas Lançadas'];
                 const rows = list.map(l => {
                     const tflf = calcTFLFReais(l.tributacao, l.tipoPessoa);
                     const issqnUficas = calcISSQN(l.nivelISSQN, l.trimestreAbertura || 1, l.issqnIsento, l.tipoPessoa);
@@ -1268,4 +1268,5 @@
     </script>
 </body>
 </html>
+
 
