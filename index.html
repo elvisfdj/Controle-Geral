@@ -472,6 +472,7 @@
             // ── Estados para Faltas e Ordenação ────────────────
             const [faltas, setFaltas] = useState([]);
             const [consultandoFaltas, setConsultandoFaltas] = useState(false);
+            const [carregandoFaltas, setCarregandoFaltas] = useState(true);
             const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
             // ── Estados para intervalo dinâmico ─────────────────
@@ -510,6 +511,34 @@
     return () => ref.off();
 }, [mes, ano]);
 
+            // Carregar faltas do Firebase
+            useEffect(() => {
+                setCarregandoFaltas(true);
+                const chaveFaltas = `faltas/${ano}/${mes}`;
+                const refFaltas = db.ref(chaveFaltas);
+                
+                console.log('🔄 Carregando faltas de:', chaveFaltas);
+                
+                const listener = refFaltas.on('value', (snap) => {
+                    const data = snap.val();
+                    console.log('📥 Dados de faltas recebidos:', data);
+                    
+                    if (data) {
+                        const listaFaltas = Object.entries(data).map(([k, v]) => ({ id: k, ...v }));
+                        console.log('📋 Faltas processadas:', listaFaltas.length, 'itens');
+                        setFaltas(listaFaltas);
+                    } else {
+                        console.log('⚠️ Nenhuma falta encontrada no Firebase');
+                        setFaltas([]);
+                    }
+                    setCarregandoFaltas(false);
+                });
+                
+                return () => {
+                    console.log('🔌 Desconectando listener de faltas');
+                    refFaltas.off('value', listener);
+                };
+            }, [mes, ano]);
             // Carregar faltas do Firebase
             useEffect(() => {
                 const chaveFaltas = `faltas/${ano}/${mes}`;
@@ -1456,6 +1485,7 @@
 </body>
 
 </html>
+
 
 
 
