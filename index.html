@@ -514,6 +514,28 @@
             useEffect(() => {
                 const chaveFaltas = `faltas/${ano}/${mes}`;
                 const refFaltas = db.ref(chaveFaltas);
+                
+                const listener = refFaltas.on('value', (snap) => {
+                    const data = snap.val();
+                    console.log('📥 Dados de faltas carregados:', data);
+                    
+                    if (data) {
+                        const listaFaltas = Object.entries(data).map(([k, v]) => ({ id: k, ...v }));
+                        console.log('📋 Faltas processadas:', listaFaltas);
+                        setFaltas(listaFaltas);
+                    } else {
+                        console.log('⚠️ Nenhuma falta encontrada');
+                        setFaltas([]);
+                    }
+                });
+                
+                return () => refFaltas.off('value', listener);
+            }, [mes, ano]);
+
+            // Carregar faltas do Firebase
+            useEffect(() => {
+                const chaveFaltas = `faltas/${ano}/${mes}`;
+                const refFaltas = db.ref(chaveFaltas);
                 refFaltas.on('value', (snap) => {
                     const data = snap.val();
                     if (data) {
@@ -1434,6 +1456,7 @@
 </body>
 
 </html>
+
 
 
 
